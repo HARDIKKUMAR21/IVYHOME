@@ -3,7 +3,7 @@ import axios from 'axios';
 const API_KEY = 'IVY26-ED62B530A404';
 
 const api = axios.create({
-    baseURL: '/api',
+    baseURL: 'https://solve.ivy.homes',
     headers: {
         'X-API-Key': API_KEY,
         'Content-Type': 'application/json',
