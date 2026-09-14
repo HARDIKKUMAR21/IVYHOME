@@ -2,10 +2,6 @@
   "outputDirectory": "frontend/dist",
   "rewrites": [
     {
-      "source": "/api/ivy-login",
-      "destination": "/api/ivy-login"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
