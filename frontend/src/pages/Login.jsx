@@ -3,27 +3,35 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Home } from 'lucide-react';
 
+const DEMO_PASSWORD = 'f90f957386';
+
 const Login = () => {
-    const [email, setEmail] = useState('demo1@ivy.homes');
-    const [password, setPassword] = useState('f90f957386');
+    // Keep fields empty so Safari/browser autofill does not make a demo account
+    // look like the currently selected account before the user chooses one.
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
-        if (e) e.preventDefault();
+        e.preventDefault();
         setError('');
+
         try {
             await login(email.trim(), password.trim());
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.detail || 'Invalid credentials');
+            // Show the API error when available. Otherwise avoid incorrectly
+            // calling network/CORS errors "Invalid credentials".
+            const apiError = err.response?.data?.detail;
+            setError(apiError || (err.response ? 'Invalid credentials' : 'Unable to connect to the login server'));
         }
     };
 
     const selectDemo = (demoEmail) => {
         setEmail(demoEmail);
-        setPassword('f90f957386');
+        setPassword(DEMO_PASSWORD);
         setError('');
     };
 
@@ -46,26 +54,26 @@ const Login = () => {
                             onClick={() => selectDemo('demo1@ivy.homes')}
                             className="flex-1 bg-white hover:bg-blue-100 text-blue-700 font-medium py-1.5 px-2 rounded border border-blue-300 text-xs transition"
                         >
-                            demo1
+                            Demo 1
                         </button>
                         <button
                             type="button"
                             onClick={() => selectDemo('demo2@ivy.homes')}
                             className="flex-1 bg-white hover:bg-blue-100 text-blue-700 font-medium py-1.5 px-2 rounded border border-blue-300 text-xs transition"
                         >
-                            demo2
+                            Demo 2
                         </button>
                         <button
                             type="button"
                             onClick={() => selectDemo('demo3@ivy.homes')}
                             className="flex-1 bg-white hover:bg-blue-100 text-blue-700 font-medium py-1.5 px-2 rounded border border-blue-300 text-xs transition"
                         >
-                            demo3
+                            Demo 3
                         </button>
                     </div>
                 </div>
 
-                <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
+                <form className="mt-4 space-y-4" onSubmit={handleSubmit} autoComplete="off">
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-lg text-sm text-center">
                             {error}
@@ -76,6 +84,8 @@ const Login = () => {
                             <label className="block text-xs font-semibold text-gray-700 mb-1">Email</label>
                             <input
                                 type="email"
+                                name="ivy-login-email"
+                                autoComplete="off"
                                 required
                                 className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-gray-900 focus:ring-blue-500 focus:border-blue-500 text-sm"
                                 placeholder="demo1@ivy.homes"
@@ -87,9 +97,11 @@ const Login = () => {
                             <label className="block text-xs font-semibold text-gray-700 mb-1">Password</label>
                             <input
                                 type="password"
+                                name="ivy-login-password"
+                                autoComplete="new-password"
                                 required
                                 className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-gray-900 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                placeholder="f90f957386"
+                                placeholder="Demo password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
