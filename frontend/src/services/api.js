@@ -1,8 +1,11 @@
 import axios from 'axios';
 
+const API_KEY = 'IVY26-ED62B530A404';
+
 const api = axios.create({
-    baseURL: '/api',
+    baseURL: 'https://solve.ivy.homes',
     headers: {
+        'X-API-Key': API_KEY,
         'Content-Type': 'application/json',
     }
 });
@@ -16,7 +19,7 @@ api.interceptors.request.use((config) => {
 });
 
 export const login = async (email, password) => {
-    const response = await api.post('/ivy-login', {
+    const response = await axios.post('/api/ivy-login', {
         email: (email || '').trim(),
         password: (password || '').trim()
     });
@@ -24,37 +27,37 @@ export const login = async (email, password) => {
 };
 
 export const getListings = async (params) => {
-    const response = await api.get('/listings', { params });
+    const response = await api.get('/v1/listings', { params });
     return response.data;
 };
 
 export const getListing = async (id) => {
-    const response = await api.get(`/listing/${id}`);
+    const response = await api.get(`/v1/listing/${id}`);
     return response.data;
 };
 
 export const getRentals = async (params) => {
-    const response = await api.get('/rentals', { params });
+    const response = await api.get('/v1/rentals', { params });
     return response.data;
 };
 
 export const getProjects = async (params) => {
-    const response = await api.get('/projects', { params });
+    const response = await api.get('/v1/projects', { params });
     return response.data;
 };
 
 export const getFavourites = async () => {
-    const response = await api.get('/favourites');
+    const response = await api.get('/v1/favourites');
     return response.data;
 };
 
 export const addFavourite = async (id) => {
-    const response = await api.post('/favourites', { id });
+    const response = await api.post('/v1/favourites', { id });
     return response.data;
 };
 
 export const removeFavourite = async (id) => {
-    const response = await api.delete(`/favourites/${id}`);
+    const response = await api.delete(`/v1/favourites/${id}`);
     return response.data;
 };
 
