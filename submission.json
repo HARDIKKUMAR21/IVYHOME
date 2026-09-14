@@ -1,0 +1,194 @@
+{
+  "api_key": "IVY26-ED62B530A404",
+  "candidate": {
+    "name": "Hardik",
+    "email": "hardik@mnnit.ac.in",
+    "repo_url": "https://github.com/hardik/ivy-homes-assignment",
+    "demo_url": "https://ivy-homes-assignment.vercel.app"
+  },
+  "answers": {
+    "total_listing_records": 4700,
+    "unique_properties": 4350,
+    "active_listings": 3722,
+    "corrupt_listing_ids": [
+      "100-1001077",
+      "100-1002346",
+      "100-1002442",
+      "100-1002884",
+      "100-1003117",
+      "DWE-1001165",
+      "DWE-1001183",
+      "DWE-1001909",
+      "DWE-1003673",
+      "MAG-1000179",
+      "MAG-1000885",
+      "MAG-1003269",
+      "MAG-1003510",
+      "SQU-1000979",
+      "SQU-1002843",
+      "SQU-1003177",
+      "ZER-1000500",
+      "ZER-1001207",
+      "ZER-1001249",
+      "ZER-1001334",
+      "ZER-1002632",
+      "ZER-1002667",
+      "ZER-1002911",
+      "ZER-1003426"
+    ],
+    "total_monthly_rent": 6731600,
+    "avg_price_per_sqft_2bhk": 21043.37,
+    "costliest_project": {
+      "project_id": "P10255",
+      "price_max_inr": 48900000
+    },
+    "listings_last_7_days": 149,
+    "fake_listing_ids": [
+      "100-1002501",
+      "DWE-1000934",
+      "DWE-1002631",
+      "DWE-1003102",
+      "MAG-1000452",
+      "MAG-1003078",
+      "MAG-1003492",
+      "MAG-1004552",
+      "SQU-1001431",
+      "SQU-1001894",
+      "SQU-1002491",
+      "SQU-1003524",
+      "ZER-1001070",
+      "ZER-1003652",
+      "ZER-1003813"
+    ],
+    "projects_with_wrong_listing_count": 392
+  },
+  "findings": [
+    {
+      "endpoint": "*",
+      "category": "auth",
+      "documented": "Every request must carry the API key as a query parameter ?api_key=IVY26-XXXXXXXXXXXX",
+      "actual": "Requests with api_key query parameter fail with 401; the key must be sent in the X-API-Key HTTP header",
+      "how_found": "Sent curl GET /v1/listings?api_key=... and received error 'send your key in the X-API-Key request header, not as a query parameter'",
+      "impact": "Any frontend or client adhering strictly to query parameter auth fails to authenticate any request",
+      "evidence": []
+    },
+    {
+      "endpoint": "/auth/login",
+      "category": "auth",
+      "documented": "Response contains {token: '...', token_type: 'Bearer', expires_in: 86400, user: {name, email}}. Tokens valid for 24 hours with no refresh flow.",
+      "actual": "Response contains access_token instead of token, refresh_token, expires_in: 900 (15 minutes, not 24h), and refresh_url: '/auth/refresh'.",
+      "how_found": "Observed JSON response from POST /auth/login with valid credentials",
+      "impact": "App looking for response.token gets undefined and session expires after 15 minutes unless refreshed",
+      "evidence": []
+    },
+    {
+      "endpoint": "/v1/listings",
+      "category": "pagination",
+      "documented": "Pagination uses page and limit parameters, with response shaped {total, page, page_size, results}",
+      "actual": "Server uses limit and offset parameters. Response is shaped {limit, offset, count, total, has_more, results}. Passing page is ignored.",
+      "how_found": "Inspected /v1/listings query parameter handling and response payload metadata",
+      "impact": "Clients incrementing page receive the same initial offset 0 repeatedly, looping on page 1",
+      "evidence": []
+    },
+    {
+      "endpoint": "/v1/projects",
+      "category": "units",
+      "documented": "price_min and price_max are in rupees integer everywhere in the API",
+      "actual": "Projects price_min and price_max are decimal floats in Crores (for values < 10) or Lakhs (for values >= 10), not integer INR.",
+      "how_found": "Checked projects.json prices against actual listing prices in the same projects",
+      "impact": "Displaying project prices directly shows values like ₹2.95 or ₹81.8 instead of ₹2.95 Crore and ₹81.8 Lakhs",
+      "evidence": [
+        "P10001",
+        "P10002",
+        "P10003",
+        "P10004",
+        "P10005",
+        "P10255"
+      ]
+    },
+    {
+      "endpoint": "/v1/analytics/summary",
+      "category": "missing_endpoint",
+      "documented": "GET /v1/analytics/summary returns pre-computed aggregates for your city",
+      "actual": "Endpoint returns 404 Not Found",
+      "how_found": "Invoked GET /v1/analytics/summary with valid auth headers and verified 404 response",
+      "impact": "Dashboard cannot rely on backend server analytics and must compute metrics client-side from raw datasets",
+      "evidence": []
+    },
+    {
+      "endpoint": "/v1/projects",
+      "category": "consistency",
+      "documented": "total_listings is recomputed whenever a listing is added or withdrawn, so it always agrees with what GET /v1/listings?project_id=... returns",
+      "actual": "total_listings in /v1/projects disagrees with the actual count of listings with that project_id in /v1/listings for 392 out of 520 projects",
+      "how_found": "Grouped retrievable /v1/listings by project_id and compared counts with project.total_listings",
+      "impact": "Project detail pages show inaccurate listing availability",
+      "evidence": [
+        "P10001",
+        "P10002",
+        "P10003",
+        "P10004",
+        "P10005",
+        "P10006",
+        "P10007",
+        "P10008",
+        "P10009",
+        "P10011"
+      ]
+    },
+    {
+      "endpoint": "/v1/listings",
+      "category": "data_quality",
+      "documented": "Returns active sale listings. Every listing corresponds to exactly one physical property with valid integer floor and areas.",
+      "actual": "Contains records with negative prices, floor greater than total_floors, and carpet_area strictly greater than super_built_up_area.",
+      "how_found": "Ran automated validation assertions over all retrievable listings",
+      "impact": "Renders invalid and physically impossible building layouts or negative property prices to end users",
+      "evidence": [
+        "100-1001077",
+        "100-1002346",
+        "100-1002442",
+        "100-1002884",
+        "100-1003117",
+        "DWE-1001165",
+        "DWE-1001183",
+        "DWE-1001909",
+        "DWE-1003673",
+        "MAG-1000179",
+        "MAG-1000885",
+        "MAG-1003269",
+        "MAG-1003510",
+        "SQU-1000979",
+        "SQU-1002843",
+        "SQU-1003177",
+        "ZER-1000500",
+        "ZER-1001207",
+        "ZER-1001249",
+        "ZER-1001334"
+      ]
+    },
+    {
+      "endpoint": "/v1/listings",
+      "category": "fraud",
+      "documented": "All retrievable listings are active sale listings safe to show to users.",
+      "actual": "Contains bait-and-switch teaser listings with absurdly low prices (< ₹50,000 for entire flats) and prompt injection text designed to manipulate AI agents.",
+      "how_found": "Filtered for listings with prices below ₹50,000 and scanned listing descriptions for prompt injection patterns",
+      "impact": "Misleads users with fake low-cost properties and compromises AI processing pipelines",
+      "evidence": [
+        "100-1002501",
+        "DWE-1000934",
+        "DWE-1002631",
+        "DWE-1003102",
+        "MAG-1000452",
+        "MAG-1003078",
+        "MAG-1003492",
+        "MAG-1004552",
+        "SQU-1001431",
+        "SQU-1001894",
+        "SQU-1002491",
+        "SQU-1003524",
+        "ZER-1001070",
+        "ZER-1003652",
+        "ZER-1003813"
+      ]
+    }
+  ]
+}
