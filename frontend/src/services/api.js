@@ -1,11 +1,8 @@
 import axios from 'axios';
 
-const API_KEY = 'IVY26-ED62B530A404';
-
 const api = axios.create({
-    baseURL: 'https://solve.ivy.homes',
+    baseURL: '/api',
     headers: {
-        'X-API-Key': API_KEY,
         'Content-Type': 'application/json',
     }
 });
@@ -19,45 +16,45 @@ api.interceptors.request.use((config) => {
 });
 
 export const login = async (email, password) => {
-    const response = await api.post('/auth/login', { 
-        email: (email || '').trim(), 
-        password: (password || '').trim() 
+    const response = await api.post('/ivy-login', {
+        email: (email || '').trim(),
+        password: (password || '').trim()
     });
     return response.data;
 };
 
 export const getListings = async (params) => {
-    const response = await api.get('/v1/listings', { params });
+    const response = await api.get('/listings', { params });
     return response.data;
 };
 
 export const getListing = async (id) => {
-    const response = await api.get(`/v1/listing/${id}`);
+    const response = await api.get(`/listing/${id}`);
     return response.data;
 };
 
 export const getRentals = async (params) => {
-    const response = await api.get('/v1/rentals', { params });
+    const response = await api.get('/rentals', { params });
     return response.data;
 };
 
 export const getProjects = async (params) => {
-    const response = await api.get('/v1/projects', { params });
+    const response = await api.get('/projects', { params });
     return response.data;
 };
 
 export const getFavourites = async () => {
-    const response = await api.get('/v1/favourites');
+    const response = await api.get('/favourites');
     return response.data;
 };
 
 export const addFavourite = async (id) => {
-    const response = await api.post('/v1/favourites', { id });
+    const response = await api.post('/favourites', { id });
     return response.data;
 };
 
 export const removeFavourite = async (id) => {
-    const response = await api.delete(`/v1/favourites/${id}`);
+    const response = await api.delete(`/favourites/${id}`);
     return response.data;
 };
 
